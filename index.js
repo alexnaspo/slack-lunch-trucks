@@ -14,6 +14,13 @@ server.use(restify.acceptParser(server.acceptable));
 server.use(restify.queryParser());
 server.use(restify.bodyParser());
 
+server.get('/', function(req, res, next) {
+    var callback = function(err, data) {
+        res.send(data);
+        res.end();
+    };
+    getSchedule(callback);
+});
 
 server.post('/', function (req, res, next) {
     var body = querystring.parse(req.body);
