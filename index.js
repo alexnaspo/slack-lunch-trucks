@@ -32,7 +32,7 @@ server.post('/', function (req, res, next) {
         dayIndex = moment().day(body.text).day();
     }
 
-    if(body.text !== "" && !moment(body.text,'dddd', true).isValid()){
+    if(body && body.text && !moment(body.text,'dddd', true).isValid()){
         req.slackresponse = constructSlackResponse("Really!?", '#test')
         return next();
     }  
@@ -64,26 +64,31 @@ var getSchedule = function getSchedule(callback){
 
     request(url, function(err, resp, body){
         var $ = cheerio.load(body);
-        var schedule = $('#pg-4-1'); 
-        var children = schedule.children().children();
-        var finalSchedule = [];
-        
-        for (var y = 0; y < 5; y++) {
-            day = $(children[y]).find('p').children('a');
-            var options = [];          
-            for (var i = 0; i < day.length; i++) {
-                options.push({
-                    name: $(day[i]).text(),
-                    link:$(day[i]).attr('href')
-                });
+        var truckOptions = $('#post-4 .entry-content h3.widget-title+p').get();
+        var truckOptions = truckOptions.map(function (el) {
+            var anchor = el.children[3];
+            if (anchor && anchor.type === 'tag' && anchor.name === 'a') {
+                return [
+                    {
+                        name: anchor.children[0].data,
+                        link: anchor.attribs.href
+                    }
+                ];
             }
-            finalSchedule.push(options);
-        }
-        return callback(null, finalSchedule);
+            else {
+                return [ ];
+            }
+        });
+        
+        return callback(null, truckOptions);
     });
 };
 
 var constructMessage = function constructMessage(response){
+    if (!response || !response.length) {
+        return 'Sorry, no food trucks today. :cry:';
+    }
+
     var text = "Your options for today are:\n";
     _.forEach(response, function(m){
         text += '\t' + m.name + " (<" + m.link + ">)\n";
